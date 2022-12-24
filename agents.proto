@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package hub_sessions.auth;
+
+message Agent {
+  string host = 1;
+  string port = 2;
+  string display_name = 3;
+}
+
+message NewAgentRequest {
+  Agent agent = 1;
+}
+
+message NewAgentResponse {
+  enum AgentState {
+    ACK = 0;
+    ALREADY_EXISTS = 1;
+    CONNECTION_ISSUE = 2;
+  }
+  AgentState agent_state = 1;
+  uint64 next_keepalive_deadline = 2;
+}
+
+message PingRequest {
+  bool disconnect = 1;
+}
+
+message PingResponse {
+  uint64 next_keepalive_deadline = 1;
+}
+
+message ListAgentsRequest { }
+
+message ListAgentsResponse {
+  repeated Agent agents = 1;
+}
+
+service AgentComms {
+  rpc NewAgent (NewAgentRequest) returns (NewAgentResponse);
+  rpc PingAgent (PingRequest) returns (PingResponse);
+  rpc ListAgents (ListAgentsRequest) returns (ListAgentsResponse);
+}
