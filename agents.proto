@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package hub_sessions.auth;
+package hub_protos.agents;
 
 message Agent {
   string host = 1;
