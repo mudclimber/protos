@@ -4,7 +4,7 @@ package hub_protos.agents;
 
 message Agent {
   string host = 1;
-  string port = 2;
+  uint32 port = 2;
   string display_name = 3;
 }
 
@@ -20,24 +20,19 @@ message NewAgentResponse {
   }
   AgentState agent_state = 1;
   uint64 next_keepalive_deadline = 2;
+  bytes guid = 3;
 }
 
 message PingRequest {
   bool disconnect = 1;
+  bytes guid = 2;
 }
 
 message PingResponse {
   uint64 next_keepalive_deadline = 1;
 }
 
-message ListAgentsRequest { }
-
-message ListAgentsResponse {
-  repeated Agent agents = 1;
-}
-
 service AgentComms {
   rpc NewAgent (NewAgentRequest) returns (NewAgentResponse);
   rpc PingAgent (PingRequest) returns (PingResponse);
-  rpc ListAgents (ListAgentsRequest) returns (ListAgentsResponse);
 }
