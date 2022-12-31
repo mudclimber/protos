@@ -32,16 +32,7 @@ message PingResponse {
   uint64 next_keepalive_deadline = 1;
 }
 
-message TwitchFromGuidRequest {
-  bytes guid = 1;
-}
-
-message TwitchFromGuidResponse {
-  string login = 1;
-}
-
 service AgentComms {
   rpc NewAgent (NewAgentRequest) returns (NewAgentResponse);
   rpc PingAgent (PingRequest) returns (PingResponse);
-  rpc TwitchFromGuid (TwitchFromGuidRequest) returns (TwitchFromGuidResponse);
 }
