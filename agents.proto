@@ -2,9 +2,21 @@ syntax = "proto3";
 
 package hub_protos.agents;
 
-message Agent {
+message TcpConnection {
   string host = 1;
   uint32 port = 2;
+}
+
+message RpcConnection {
+  string host = 1;
+  uint32 port = 2;
+}
+
+message Agent {
+  oneof connection {
+    TcpConnection tcp = 1;
+    RpcConnection rpc = 2;
+  }
   string display_name = 3;
 }
 
@@ -35,4 +47,37 @@ message PingResponse {
 service AgentComms {
   rpc NewAgent (NewAgentRequest) returns (NewAgentResponse);
   rpc PingAgent (PingRequest) returns (PingResponse);
+}
+
+message Login {
+  string login = 1;
+}
+
+message Read {
+  bytes buf = 1;
+}
+
+message Resize {
+  uint32 columns = 1;
+  uint32 rows = 2;
+}
+
+message AgentStreamRequest {
+  oneof frame {
+    Login login = 1;
+    Read read = 2;
+    Resize resize = 3;
+  }
+}
+
+message Write {
+  bytes buf = 1;
+}
+
+message AgentStreamResponse {
+  Write write = 1;
+}
+
+service AgentStreams {
+  rpc AgentStream (stream AgentStreamRequest) returns (stream AgentStreamResponse);
 }
