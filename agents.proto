@@ -51,6 +51,8 @@ service AgentComms {
 
 message Login {
   string login = 1;
+  uint32 columns = 2;
+  uint32 rows = 3;
 }
 
 message Read {
