@@ -64,11 +64,14 @@ message Resize {
   uint32 rows = 2;
 }
 
+message Disconnect { }
+
 message AgentStreamRequest {
   oneof frame {
     Login login = 1;
     Read read = 2;
     Resize resize = 3;
+    Disconnect disconnect = 4;
   }
 }
 
