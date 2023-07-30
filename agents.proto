@@ -1,6 +1,9 @@
 syntax = "proto3";
 
+option go_package = "hub_protos_agents";
+
 package hub_protos.agents;
+
 
 message TcpConnection {
   string host = 1;
