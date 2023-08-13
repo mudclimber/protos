@@ -2,28 +2,74 @@ syntax = "proto3";
 
 package hub_protos.agents;
 
+/*
+Some definitions:
+
+"Agent" -> a game, service, or anything else that is connected to the hub. When
+           someone connects to The Hub, the list of things they see are "agents"
+
+"Request" -> The Hub sends a request to the agent. The agent is free to send
+             responses.
+
+"Response" -> The agent can send one of these back to the hub. This can be
+              Twitch chat output or output directly to the person connected
+              to the agent.
+
+AgentStreams is a bidirectional streaming RPC service. It stays alive as the
+connection stays alive. To close the connection, all that has to be done is
+close the stream. Each stream is an individual person connection between
+The Hub and the agent in question.
+
+*/
+
+/*
+Reference to a TCP socket (host and port)
+*/
 message TcpConnection {
   string host = 1;
   uint32 port = 2;
 }
 
+/*
+Reference to an RPC endpoint (host and port)
+*/
 message RpcConnection {
   string host = 1;
   uint32 port = 2;
 }
 
+/*
+Entry for an agent (game, service, etc).
+What is it called (display_name), and
+how should I connect (connection)
+*/
 message Agent {
   oneof connection {
     TcpConnection tcp = 1;
     RpcConnection rpc = 2;
   }
+
+  /* Name it will show on The Hub */
   string display_name = 3;
+
+  /* Used to detect if a connection is already present
+     but not known to The Hub that it's disconnected.
+     Prevents double listings. NOT IMPLEMENTED YET.*/
+  string connection_key = 4;
+
 }
 
+/*
+A request to have a new agent in the hub
+*/
 message NewAgentRequest {
   Agent agent = 1;
 }
 
+/*
+When the agent requests a new agent entry
+to The Hub, The Hub will send this response back.
+*/
 message NewAgentResponse {
   enum AgentState {
     ACK = 0;
@@ -35,37 +81,75 @@ message NewAgentResponse {
   bytes guid = 3;
 }
 
+/*
+Agent needs to send a ping request to the
+agent to stay alive.
+*/
 message PingRequest {
   bool disconnect = 1;
   bytes guid = 2;
 }
 
+/*
+Hub will response to a PingRequest with this response
+that contains the next keepalive deadline. The agent
+will need to send another PingRequest before this deadline
+or it will be removed from The Hub entirely.
+*/
 message PingResponse {
   uint64 next_keepalive_deadline = 1;
 }
 
+/*
+AgentComms service. Required for an agent to stay alive
+on The Hub
+*/
 service AgentComms {
   rpc NewAgent (NewAgentRequest) returns (NewAgentResponse);
   rpc PingAgent (PingRequest) returns (PingResponse);
 }
 
+/*
+Hub sends a Login to the agent when someone connects.
+It's up to the local agent logic to "resume" a disconnect,
+etc.
+*/
 message Login {
   string login = 1;
   uint32 columns = 2;
   uint32 rows = 3;
 }
 
+/*
+Input from the person. Bytes at a time, not guaranteed to be
+an individual command. They can be broken up into multiple
+Read requests, and up to the agent logic to buffer them
+that makes sense for them, e.g. buffer by searching for
+newlines.
+*/
 message Read {
   bytes buf = 1;
 }
 
+/*
+The person may resize their terminal. The agent may use this
+to redraw or anything else.
+*/
 message Resize {
   uint32 columns = 1;
   uint32 rows = 2;
 }
 
+/*
+The person may disconnect from The Hub, which will cause The Hub
+to send this message.
+*/
 message Disconnect { }
 
+/*
+The Hub will send one of these to the agent as the person tries
+to interact with the agent.
+*/
 message AgentStreamRequest {
   oneof frame {
     Login login = 1;
@@ -75,14 +159,38 @@ message AgentStreamRequest {
   }
 }
 
+/*
+Agents should use this Write message to send output to the person
+connected to the stream.
+*/
 message Write {
   bytes buf = 1;
 }
 
-message AgentStreamResponse {
-  Write write = 1;
+/*
+Agents should use this Chat message to have the mudbot mod announce
+something to the channel
+*/
+message Chat {
+  string msg = 1;
 }
 
+/*
+This is the response the agent can send back to The Hub
+*/
+message AgentStreamResponse {
+  oneof frame {
+    Write write = 1;
+    Chat chat = 2;
+  }
+}
+
+/*
+AgentStreams RPC service. Each request represents a single person connected
+to the agent via The Hub.
+
+Example: Five players connected to a MUD will be 5 separate RPCs to AgentStream.
+*/
 service AgentStreams {
   rpc AgentStream (stream AgentStreamRequest) returns (stream AgentStreamResponse);
 }
